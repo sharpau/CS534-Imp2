@@ -50,16 +50,18 @@ int _tmain(int argc, _TCHAR* argv[])
 		trainingData.push_back(make_pair(group, dummy)); // index == docID
 	}
 
+	cout << "Training labels done" << endl;
+
 	while(trainingDataFile.good()) {
 		int group = 0;
 		int word = 0;
 		int freq = 0;
-		trainingLabels >> group; // docID
-		trainingLabels.get(); // space char
-		trainingLabels >> word; // docID
-		trainingLabels.get(); // space char
-		trainingLabels >> freq; // docID
-		trainingLabels.get(); // newline
+		trainingDataFile >> group; // docID
+		trainingDataFile.get(); // space char
+		trainingDataFile >> word; // docID
+		trainingDataFile.get(); // space char
+		trainingDataFile >> freq; // docID
+		trainingDataFile.get(); // newline
 
 		// save to correct docID's data
 		trainingData[group].second.push_back(make_pair(word, freq));
