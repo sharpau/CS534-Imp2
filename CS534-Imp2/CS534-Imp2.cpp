@@ -71,11 +71,46 @@ int _tmain(int argc, _TCHAR* argv[])
 	//cout << trainingData.size() << endl;
 	
 	// these can both return their output I believe
-	auto p_iy = naiveBayesBernoulliTraining(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
+	auto p_iyBernoulli = naiveBayesBernoulliTraining(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
 	
-	naiveBayesMultinomialTraining(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
+	auto p_iyMultinomial = naiveBayesMultinomialTraining(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
 	
+	// for each test example there is
+	//		a class - int
+	//		a set of feature words
+	//			aka a vector of int, int.
+	vector<pair<int, vector<pair<int, int>>>> testData;
+	// again, 1-indexing, so add a dummy
+	vector<pair<int, int>> dummy(0, make_pair(0, 0));
+	testData.push_back(make_pair(0, dummy));
+	ifstream testDataFile("train.data");
+	ifstream testLabels("train.label");
+
+	while(testLabels.good()) {
+		int group = 0;
+		testLabels >> group; // classID
+		testLabels.get(); // newline char
+		testData.push_back(make_pair(group, dummy)); // index == docID
+	}
+
+	//cout << "test labels done" << endl;
+
+	while(testDataFile.good()) {
+		int group = 0;
+		int word = 0;
+		int freq = 0;
+		testDataFile >> group; // docID
+		testDataFile.get(); // space char
+		testDataFile >> word; // docID
+		testDataFile.get(); // space char
+		testDataFile >> freq; // docID
+		testDataFile.get(); // newline
+
+		// save to correct docID's data
+		testData[group].second.push_back(make_pair(word, freq));
+	}
 	
+	testData.pop_back(); // remove extra blank
 	// TODO: reading in test data
 	
 	
@@ -108,19 +143,47 @@ vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels
 	vector<pair<vector<int>, int>> p_iy(labels.size(), make_pair(appearances, 2)); // laplace smoothing - 2 in denominator
 
 	for(auto example : trainingData) {
-		int group = example.first;
-		p_iy[group].second++; // instance of class y seen
+		int y = example.first;
+		p_iy[y].second++; // instance of class y seen
 		for(auto word : example.second) {
-			p_iy[group].first[word.first]++; // at least one appearance of word i in class y
+			p_iy[y].first[word.first]++; // at least one appearance of word i in class y
 		}
 	}
 	return p_iy;
 }
 
 // needs test data as input
-void naiveBayesBernoulliTest(vector<pair<vector<int>, int>> p_iy) {
+void naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
 	// iterative over test data
+	/*
+		for example x
+		py = 0f
+		for each possible class y
+			for each feature xi
+				if xi == 1
+					py += log( p_iy[y].first[i] / p_iy[y].second )
+				else
+					py += log ( 1 - above )
+		pick highest probability class
+	*/
 }
 
-void naiveBayesMultinomialTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+vector<pair<vector<int>, int>> naiveBayesMultinomialTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+	vector<int> appearances(dictionary.size(), 1); // laplace smoothing - 1 in numerator
+	vector<pair<vector<int>, int>> p_iy(labels.size(), make_pair(appearances, dictionary.size())); // laplace smoothing - vocab size in denominator
+
+	for(auto example : trainingData) {
+		int y = example.first;
+		for(auto word : example.second) {
+			// count all words in group/class y
+			p_iy[y].second += word.second;
+			// count of word i in class y examples
+			p_iy[y].first[word.first] += word.second;
+		}
+	}
+	return p_iy;
+}
+
+void naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
+	// this algorithm might be exactly the same as for the Bernoulli test. we may not need both functions.
 }
