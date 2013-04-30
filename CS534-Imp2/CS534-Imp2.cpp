@@ -70,19 +70,57 @@ int _tmain(int argc, _TCHAR* argv[])
 	trainingData.pop_back(); // remove extra blank -- size = 11270, which is correct because we have an unused trainingData[0] field.
 	//cout << trainingData.size() << endl;
 	
-	naiveBayesBernoulli(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
+	// these can both return their output I believe
+	auto p_iy = naiveBayesBernoulliTraining(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
 	
-	naiveBayesMultinomial(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
+	naiveBayesMultinomialTraining(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
 	
 	
-	
+	// TODO: reading in test data
 	
 	
 	return 0;
 }
 
-void naiveBayesBernoulli(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+// result of training: list of p_i|y and x_i for all i elements of vocabulary
+// p_i|y needs Laplace smoothing, aka add 1 to numerator and 2 to denominator
+// then to test: calculate p(x|y), straightforward enough
+/*
+	to calculate a single p(x|y)
+		p = 0
+		for all words i
+			n1 = num(class y examples where word i appears) + 1
+			n = num(class y examples) + 2
+			//p_i|y = n1/n
+			// sum of log(a)s rather than product of as
+			if i present in x
+				p += log(n1/n)
+			else
+				p += log(1 - n1/n)
+
+	so to train all
+	vector of y vectors of length i holding p_i|y
+	use above method but instead of p +=, just assign p_vec[y][i] = p_i|y
+	
+*/
+vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+	vector<int> appearances(dictionary.size(), 1); // laplace smoothing - 1 in numerator
+	vector<pair<vector<int>, int>> p_iy(labels.size(), make_pair(appearances, 2)); // laplace smoothing - 2 in denominator
+
+	for(auto example : trainingData) {
+		int group = example.first;
+		p_iy[group].second++; // instance of class y seen
+		for(auto word : example.second) {
+			p_iy[group].first[word.first]++; // at least one appearance of word i in class y
+		}
+	}
+	return p_iy;
 }
 
-void naiveBayesMultinomial(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+// needs test data as input
+void naiveBayesBernoulliTest(vector<pair<vector<int>, int>> p_iy) {
+	// iterative over test data
+}
+
+void naiveBayesMultinomialTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
 }
