@@ -50,7 +50,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		trainingData.push_back(make_pair(group, dummy)); // index == docID
 	}
 
-	cout << "Training labels done" << endl;
+	//cout << "Training labels done" << endl;
 
 	while(trainingDataFile.good()) {
 		int group = 0;
@@ -67,13 +67,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		trainingData[group].second.push_back(make_pair(word, freq));
 	}
 	
+	trainingData.pop_back(); // remove extra blank -- size = 11270, which is correct because we have an unused trainingData[0] field.
+	//cout << trainingData.size() << endl;
 	
-	trainingData.pop_back(); // extra blank? not sure
+	naiveBayesBernoulli(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
 	
-	
-	
-	
-	
+	naiveBayesMultinomial(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
 	
 	
 	
@@ -82,3 +81,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 
+void naiveBayesBernoulli(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+}
+
+void naiveBayesMultinomial(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
+}
