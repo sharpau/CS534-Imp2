@@ -83,8 +83,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	// again, 1-indexing, so add a dummy
 	vector<pair<int, int>> dummy(0, make_pair(0, 0));
 	testData.push_back(make_pair(0, dummy));
-	ifstream testDataFile("train.data");
-	ifstream testLabels("train.label");
+	ifstream testDataFile("test.data");
+	ifstream testLabels("test.label");
 
 	while(testLabels.good()) {
 		int group = 0;
@@ -152,8 +152,8 @@ vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels
 	return p_iy;
 }
 
-// needs test data as input
-void naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
+// needs test data as input -- make output
+vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
 	// iterative over test data
 	/*
 		for example x
@@ -166,6 +166,67 @@ void naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData,
 					py += log ( 1 - above )
 		pick highest probability class
 	*/
+
+	vector<int> classification;			// compare to test label at some point
+	bool inSet;
+
+	// for test example i
+	for(int i = 1; i < testData.size(); i++){
+	vector<double> py;					// remake py for each loop
+	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
+
+		// for each class j - SHOULD THIS START WITH 0 OR 1?
+		for(int j = 1; j < p_iy.size(); j++){
+			py.push_back(0);
+			//for each feature k
+			for(int k = 0; k < p_iy[i].first.size(); k++){
+				inSet = false;
+
+				// check if feature present
+				for(int m = 0; m < testData[i].second.size(); m++){
+					if(testData[i].second[m].first == k){
+						inSet = true;
+						break;
+					}
+				}
+
+				// if feature present, add log(p).  Else, add log(1 - p)
+				if(inSet == true)
+					py[j] += log(p_iy[j].first[k] / p_iy[j].second);
+				else
+					py[j] += 1 - log(p_iy[j].first[k] / p_iy[j].second);
+
+			}
+		}
+
+		// classify
+		double maxpy = -10000000000000, selection = 0;			// maybe replace value for initial maxpy with a constant?  
+		for(int j = 1; j < p_iy.size(); j++){ 
+			if(py[j] > maxpy){
+				maxpy = py[j];
+				selection = j;
+			}
+		}
+		// add to classification vector
+		classification[i] = selection;
+	}
+
+}
+
+vector<vector<int>> formSolutionMatrix(vector<int> classification, vector<int> testLabels, int numClasses){
+	
+	// create solution matrix
+	vector<vector<int>> solution;
+	solution.resize(numClasses);			// numClasses may actually be number of classes plus one w/ zero unused
+	for(int i = 0; i < solution.size(); i++){
+		solution[i].resize(numClasses, 0);
+	}
+
+	for(int i = 0; i < classification.size(); i++){
+		solution[testLabels[i]][classification[i]]++;
+	}
+
+	return solution;
 }
 
 vector<pair<vector<int>, int>> naiveBayesMultinomialTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
