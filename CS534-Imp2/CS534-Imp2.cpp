@@ -44,9 +44,10 @@ vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels
 	}
 
 	// calculate the total log of p_iy[i] so that we don't have to do it 100k+ times later
+	// this is equal to sum over all features i of log(1-p_iy)
 	for(size_t i = 1; i < p_iy.size(); i++) {
 		for(size_t j = 1; j < p_iy[i].first.size(); j++){
-			totalLogP[i] += log((double)p_iy[i].first[j] / (double)p_iy[i].second);
+			totalLogP[i] += log(1 - ((double)p_iy[i].first[j] / (double)p_iy[i].second));
 		}
 	}
 	return p_iy;
@@ -73,18 +74,19 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 
 	// for test example i
 	for(size_t i = 1; i < testData.size(); i++){
-	vector<double> py;					// remake py for each loop
-	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
+		vector<double> py;					// remake py for each loop
+		py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
 
 		// for each class j - SHOULD THIS START WITH 0 OR 1?
 		for(size_t j = 1; j < p_iy.size(); j++){
-			// initialize to 1-log(p)
-			py.push_back(1-totalLogP[j]);
+			// initialize to sum over all features i of log(1-p_iy)
+			py.push_back(totalLogP[j]);
 			//for each feature k
 			for(size_t k = 0; k < testData[i].second.size(); k++){
-				// if feature present, add log(p) and remove existing 1 - log(p) for that feature.  
+				// remove existing 1 - log(p) for that feature.  
+				py[j] -= log(1 - (double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second);
+				// if feature present, add log(p) 
 				py[j] += log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second);
-				py[j] -= 1 - log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second);
 			}
 		}
 
