@@ -60,6 +60,7 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 	*/
 
 	vector<int> classification;			// compare to test label at some point
+	classification.push_back(0);		// first field should be zero
 	bool inSet;
 	int selection = 0;			
 
@@ -72,7 +73,7 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 		for(size_t j = 1; j < p_iy.size(); j++){
 			py.push_back(0);
 			//for each feature k
-			for(size_t k = 0; k < p_iy[i].first.size(); k++){
+			for(size_t k = 0; k < p_iy[j].first.size(); k++){
 				inSet = false;
 
 				// check if feature present
@@ -101,7 +102,7 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 			}
 		}
 		// add to classification vector
-		classification[i] = selection;
+		classification.push_back(selection);
 	}
 
 	return classification;
@@ -113,11 +114,11 @@ vector<vector<int>> formSolutionMatrix(vector<int> classification, 	vector<pair<
 	// create solution matrix
 	vector<vector<int>> solution;
 	solution.resize(numClasses);			// numClasses may actually be number of classes plus one w/ zero unused
-	for(size_t i = 0; i < solution.size(); i++){
+	for(size_t i = 1; i < solution.size(); i++){
 		solution[i].resize(numClasses, 0);
 	}
 
-	for(size_t i = 0; i < classification.size(); i++){
+	for(size_t i = 1; i < classification.size(); i++){
 		solution[testData[i].first][classification[i]]++;
 	}
 
@@ -142,7 +143,8 @@ vector<pair<vector<int>, int>> naiveBayesMultinomialTraining(vector<string> labe
 
 vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
 	// this algorithm might be exactly the same as for the Bernoulli test. we may not need both functions.
-		vector<int> classification;			// compare to test label at some point
+	vector<int> classification;			// compare to test label at some point
+	classification.push_back(0);	// put 0 for first
 	bool inSet;
 
 	// for test example i
@@ -155,7 +157,7 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 		for(size_t j = 1; j < p_iy.size(); j++){
 			py.push_back(0);
 			//for each feature k
-			for(size_t k = 0; k < p_iy[i].first.size(); k++){
+			for(size_t k = 0; k < p_iy[j].first.size(); k++){
 				inSet = false;
 				size_t m;
 				// check if feature present
@@ -181,7 +183,7 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 			}
 		}
 		// add to classification vector
-		classification[i] = selection;
+		classification.push_back(selection);
 	}
 	return classification;
 }
@@ -299,15 +301,25 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	
 	testData.pop_back(); // remove extra blank
-	// TODO: reading in test data
+
+	cout << "Test data complete" << endl;
 	
 	// run tests
 	vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli);
+	cout << "Bernoulli complete" << endl;
+
 	vector<int> multinomialTest = naiveBayesBernoulliTest(testData, p_iyMultinomial);
+
+	cout << "Multinomial complete" << endl;
 
 	// retrieve solution matrices
 	vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, bernoulliTest.size());
+
+	cout << "b sol complete" << endl;
+
 	vector<vector<int>> multinomialSolution = formSolutionMatrix(multinomialTest, testData, multinomialTest.size());
+
+	cout << "solutions complete" << endl;
 
 	printToFile("bernoulli.out", bernoulliSolution);
 	printToFile("multinomial.out", multinomialSolution);
