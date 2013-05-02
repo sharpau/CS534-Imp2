@@ -156,21 +156,10 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 		// for each class j - SHOULD THIS START WITH 0 OR 1?
 		for(size_t j = 1; j < p_iy.size(); j++){
 			py.push_back(0);
-			//for each feature k
-			for(size_t k = 0; k < p_iy[j].first.size(); k++){
-				inSet = false;
-				size_t m;
-				// check if feature present
-				for(m = 0; m < testData[i].second.size(); m++){
-					if(testData[i].second[m].first == k){
-						inSet = true;
-						break;
-					}
-				}
-
+			//for each feature k present in testData
+			for(size_t k = 0; k < testData[i].second.size(); k++){
 				// if feature present, add log(p)^(instances).  
-				if(inSet == true)
-					py[j] += pow(log(p_iy[j].first[k] / p_iy[j].second), testData[i].second[m].second);
+				py[j] += pow(log(p_iy[j].first[testData[i].second[k].first] / p_iy[j].second), testData[i].second[k].second);
 			}
 		}
 
@@ -305,15 +294,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << "Test data complete" << endl;
 	
 	// run tests
-	vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli);
+	//vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli);
 	cout << "Bernoulli complete" << endl;
 
-	vector<int> multinomialTest = naiveBayesBernoulliTest(testData, p_iyMultinomial);
+	vector<int> multinomialTest = naiveBayesMultinomialTest(testData, p_iyMultinomial);
 
 	cout << "Multinomial complete" << endl;
 
 	// retrieve solution matrices
-	vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, bernoulliTest.size());
+	//vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, bernoulliTest.size());
 
 	cout << "b sol complete" << endl;
 
@@ -321,7 +310,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	cout << "solutions complete" << endl;
 
-	printToFile("bernoulli.out", bernoulliSolution);
+	//printToFile("bernoulli.out", bernoulliSolution);
 	printToFile("multinomial.out", multinomialSolution);
 
 	return 0;
