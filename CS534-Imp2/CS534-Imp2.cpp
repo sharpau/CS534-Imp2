@@ -146,17 +146,17 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 	vector<double> py;
 	// for test example i
 	for(size_t i = 1; i < testData.size(); i++){
-	py.resize(0);					// remake py for each loop
-	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
-	int selection = 0;			
+		py.resize(0);					// remake py for each loop
+		py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
+		int selection = 0;			
 
 		// for each class j - SHOULD THIS START WITH 0 OR 1?
 		for(size_t j = 1; j < p_iy.size(); j++){
 			py.push_back(0);
 			//for each feature k present in testData
 			for(size_t k = 0; k < testData[i].second.size(); k++){
-				// if feature present, add log(p)^(instances).  
-				py[j] += pow(log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second), testData[i].second[k].second);
+				// if feature present, add log(p^instances).  
+				py[j] += log(pow((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second, testData[i].second[k].second));
 			}
 		}
 
