@@ -1,0 +1,64 @@
+// needs test data as input -- make output
+vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
+	// iterative over test data
+	/*
+		for example x
+		py = 0f
+		for each possible class y
+			for each feature xi
+				if xi == 1
+					py += log( p_iy[y].first[i] / p_iy[y].second )
+				else
+					py += log ( 1 - above )
+		pick highest probability class
+	*/
+
+	vector<int> classification;			// compare to test label at some point
+	classification.push_back(0);		// first field should be zero
+	bool inSet;
+	int selection = 0;			
+
+	// for test example i
+	for(size_t i = 1; i < testData.size(); i++){
+	vector<double> py;					// remake py for each loop
+	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
+
+		// for each class j - SHOULD THIS START WITH 0 OR 1?
+		for(size_t j = 1; j < p_iy.size(); j++){
+			py.push_back(0);
+			//for each feature k
+			for(size_t k = 0; k < p_iy[j].first.size(); k++){
+				inSet = false;
+
+				// check if feature present
+				for(size_t m = 0; m < testData[i].second.size(); m++){
+					if(testData[i].second[m].first == k){
+						inSet = true;
+						break;
+					}
+				}
+
+				// if feature present, add log(p).  Else, add log(1 - p)
+				if(inSet == true)
+					py[j] += log((double)p_iy[j].first[k] / (double)p_iy[j].second);
+				else
+					py[j] += 1 - log((double)p_iy[j].first[k] / (double)p_iy[j].second);
+
+			}
+		}
+
+		// classify
+		double maxpy = -10000000000000;	// maybe replace value for initial maxpy with a constant?  
+		for(size_t j = 1; j < p_iy.size(); j++){ 
+			if(py[j] > maxpy){
+				maxpy = py[j];
+				selection = j;
+			}
+		}
+		// add to classification vector
+		classification.push_back(selection);
+	}
+
+	return classification;
+
+}

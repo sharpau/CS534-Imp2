@@ -30,8 +30,8 @@ using namespace std;
 	use above method but instead of p +=, just assign p_vec[y][i] = p_i|y
 	
 */
-vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData){
-	vector<int> appearances(dictionary.size(), 1); // laplace smoothing - 1 in numerator
+vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels, vector<string> dictionary, vector<pair<int, vector<pair<int, int>>>> trainingData, vector<double> &totalLogP){
+	vector<int> appearances(dictionary.size()+1, 1); // laplace smoothing - 1 in numerator
 	vector<pair<vector<int>, int>> p_iy(labels.size(), make_pair(appearances, 2)); // laplace smoothing - 2 in denominator
 
 	for(auto example : trainingData) {
@@ -39,13 +39,21 @@ vector<pair<vector<int>, int>> naiveBayesBernoulliTraining(vector<string> labels
 		p_iy[y].second++; // instance of class y seen
 		for(auto word : example.second) {
 			p_iy[y].first[word.first]++; // at least one appearance of word i in class y
+
+		}
+	}
+
+	// calculate the total log of p_iy[i] so that we don't have to do it 100k+ times later
+	for(size_t i = 1; i < p_iy.size(); i++) {
+		for(size_t j = 1; j < p_iy[i].first.size(); j++){
+			totalLogP[i] += log((double)p_iy[i].first[j] / (double)p_iy[i].second);
 		}
 	}
 	return p_iy;
 }
 
 // needs test data as input -- make output
-vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
+vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy, vector<double> &totalLogP) {
 	// iterative over test data
 	/*
 		for example x
@@ -61,7 +69,6 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 
 	vector<int> classification;			// compare to test label at some point
 	classification.push_back(0);		// first field should be zero
-	bool inSet;
 	int selection = 0;			
 
 	// for test example i
@@ -71,25 +78,13 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 
 		// for each class j - SHOULD THIS START WITH 0 OR 1?
 		for(size_t j = 1; j < p_iy.size(); j++){
-			py.push_back(0);
+			// initialize to 1-log(p)
+			py.push_back(1-totalLogP[j]);
 			//for each feature k
-			for(size_t k = 0; k < p_iy[j].first.size(); k++){
-				inSet = false;
-
-				// check if feature present
-				for(size_t m = 0; m < testData[i].second.size(); m++){
-					if(testData[i].second[m].first == k){
-						inSet = true;
-						break;
-					}
-				}
-
-				// if feature present, add log(p).  Else, add log(1 - p)
-				if(inSet == true)
-					py[j] += log(p_iy[j].first[k] / p_iy[j].second);
-				else
-					py[j] += 1 - log(p_iy[j].first[k] / p_iy[j].second);
-
+			for(size_t k = 0; k < testData[i].second.size(); k++){
+				// if feature present, add log(p) and remove existing 1 - log(p) for that feature.  
+				py[j] += log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second);
+				py[j] -= 1 - log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second);
 			}
 		}
 
@@ -145,11 +140,11 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 	// this algorithm might be exactly the same as for the Bernoulli test. we may not need both functions.
 	vector<int> classification;			// compare to test label at some point
 	classification.push_back(0);	// put 0 for first
-	bool inSet;
 
+	vector<double> py;
 	// for test example i
 	for(size_t i = 1; i < testData.size(); i++){
-	vector<double> py;					// remake py for each loop
+	py.resize(0);					// remake py for each loop
 	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
 	int selection = 0;			
 
@@ -159,7 +154,7 @@ vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> 
 			//for each feature k present in testData
 			for(size_t k = 0; k < testData[i].second.size(); k++){
 				// if feature present, add log(p)^(instances).  
-				py[j] += pow(log(p_iy[j].first[testData[i].second[k].first] / p_iy[j].second), testData[i].second[k].second);
+				py[j] += pow(log((double)p_iy[j].first[testData[i].second[k].first] / (double)p_iy[j].second), testData[i].second[k].second);
 			}
 		}
 
@@ -202,7 +197,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	labels.pop_back(); // blank extra
 	
 	vector<string> dictionary;
-
+	dictionary.push_back("DUMMY");
 	ifstream dictionaryFile("vocabulary.txt");
 	while(dictionaryFile.good()) {
 		string word;
@@ -249,8 +244,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	trainingData.pop_back(); // remove extra blank -- size = 11270, which is correct because we have an unused trainingData[0] field.
 	//cout << trainingData.size() << endl;
 	
+	vector<double> totalLogP;
+	totalLogP.resize(trainingData[trainingData.size()-1].first+1, 0);
+
 	// these can both return their output I believe
-	auto p_iyBernoulli = naiveBayesBernoulliTraining(labels, dictionary, trainingData);	// should have one more vector pointer passed by reference for output
+	auto p_iyBernoulli = naiveBayesBernoulliTraining(labels, dictionary, trainingData, totalLogP);	// should have one more vector pointer passed by reference for output
 	
 	auto p_iyMultinomial = naiveBayesMultinomialTraining(labels, dictionary, trainingData);	// should have one more vector passed by reference for output
 	
@@ -294,7 +292,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << "Test data complete" << endl;
 	
 	// run tests
-	//vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli);
+	vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli, totalLogP);
 	cout << "Bernoulli complete" << endl;
 
 	vector<int> multinomialTest = naiveBayesMultinomialTest(testData, p_iyMultinomial);
@@ -302,15 +300,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << "Multinomial complete" << endl;
 
 	// retrieve solution matrices
-	//vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, bernoulliTest.size());
+	vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, trainingData[trainingData.size()-1].first+1);
 
 	cout << "b sol complete" << endl;
 
-	vector<vector<int>> multinomialSolution = formSolutionMatrix(multinomialTest, testData, multinomialTest.size());
+	vector<vector<int>> multinomialSolution = formSolutionMatrix(multinomialTest, testData, trainingData[trainingData.size()-1].first+1);
 
 	cout << "solutions complete" << endl;
 
-	//printToFile("bernoulli.out", bernoulliSolution);
+	printToFile("bernoulli.out", bernoulliSolution);
 	printToFile("multinomial.out", multinomialSolution);
 
 	return 0;
