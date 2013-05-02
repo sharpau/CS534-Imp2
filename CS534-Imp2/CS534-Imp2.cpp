@@ -113,7 +113,17 @@ int _tmain(int argc, _TCHAR* argv[])
 	testData.pop_back(); // remove extra blank
 	// TODO: reading in test data
 	
-	
+	// run tests
+	vector<int> bernoulliTest = naiveBayesBernoulliTest(testData, p_iyBernoulli);
+	vector<int> multinomialTest = naiveBayesBernoulliTest(testData, p_iyMultinomial);
+
+	// retrieve solution matrices
+	vector<vector<int>> bernoulliSolution = formSolutionMatrix(bernoulliTest, testData, bernoulliTest.size());
+	vector<vector<int>> multinomialSolution = formSolutionMatrix(multinomialTest, testData, multinomialTest.size());
+
+	printToFile("bernoulli.out", bernoulliSolution);
+	printToFile("multinomial.out", multinomialSolution);
+
 	return 0;
 }
 
@@ -211,9 +221,11 @@ vector<int> naiveBayesBernoulliTest(vector<pair<int, vector<pair<int, int>>>> te
 		classification[i] = selection;
 	}
 
+	return classification;
+
 }
 
-vector<vector<int>> formSolutionMatrix(vector<int> classification, vector<int> testLabels, int numClasses){
+vector<vector<int>> formSolutionMatrix(vector<int> classification, 	vector<pair<int, vector<pair<int, int>>>> testData, int numClasses){
 	
 	// create solution matrix
 	vector<vector<int>> solution;
@@ -223,7 +235,7 @@ vector<vector<int>> formSolutionMatrix(vector<int> classification, vector<int> t
 	}
 
 	for(int i = 0; i < classification.size(); i++){
-		solution[testLabels[i]][classification[i]]++;
+		solution[testData[i].first][classification[i]]++;
 	}
 
 	return solution;
@@ -245,6 +257,58 @@ vector<pair<vector<int>, int>> naiveBayesMultinomialTraining(vector<string> labe
 	return p_iy;
 }
 
-void naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
+vector<int> naiveBayesMultinomialTest(vector<pair<int, vector<pair<int, int>>>> testData, vector<pair<vector<int>, int>> p_iy) {
 	// this algorithm might be exactly the same as for the Bernoulli test. we may not need both functions.
+		vector<int> classification;			// compare to test label at some point
+	bool inSet;
+
+	// for test example i
+	for(int i = 1; i < testData.size(); i++){
+	vector<double> py;					// remake py for each loop
+	py.push_back(0);					// pad with a 0 -- REMOVE THIS IF CLASS LABEL STARTS AT ZERO
+
+		// for each class j - SHOULD THIS START WITH 0 OR 1?
+		for(int j = 1; j < p_iy.size(); j++){
+			py.push_back(0);
+			//for each feature k
+			for(int k = 0; k < p_iy[i].first.size(); k++){
+				inSet = false;
+				int m;
+				// check if feature present
+				for(m = 0; m < testData[i].second.size(); m++){
+					if(testData[i].second[m].first == k){
+						inSet = true;
+						break;
+					}
+				}
+
+				// if feature present, add log(p)^(instances).  
+				if(inSet == true)
+					py[j] += pow(log(p_iy[j].first[k] / p_iy[j].second), testData[i].second[m].second);
+			}
+		}
+
+		// classify
+		double maxpy = -10000000000000, selection = 0;			// maybe replace value for initial maxpy with a constant?  
+		for(int j = 1; j < p_iy.size(); j++){ 
+			if(py[j] > maxpy){
+				maxpy = py[j];
+				selection = j;
+			}
+		}
+		// add to classification vector
+		classification[i] = selection;
+	}
+	return classification;
+}
+
+void printToFile(string filename, vector<vector<int>> solution){
+	ofstream outStream (filename);
+
+	for(int i = 1; i < solution.size(); i++){
+		for(int j = 1; j < solution[i].size(); j++){
+			outStream << solution[i][j] << ",";
+		}
+		outStream << endl;
+	}
 }
