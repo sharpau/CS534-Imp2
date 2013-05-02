@@ -313,6 +313,23 @@ int _tmain(int argc, _TCHAR* argv[])
 	printToFile("bernoulli.out", bernoulliSolution);
 	printToFile("multinomial.out", multinomialSolution);
 
+
+	// run tests on training data (out of curiosity)
+	vector<int> bernoulliTrainTest = naiveBayesBernoulliTest(trainingData, p_iyBernoulli, totalLogP);
+	cout << "Bernoulli complete" << endl;
+
+	vector<int> multinomialTrainTest = naiveBayesMultinomialTest(trainingData, p_iyMultinomial);
+
+	cout << "Multinomial complete" << endl;
+
+	// retrieve solution matrices
+	vector<vector<int>> bernoulliTrainSolution = formSolutionMatrix(bernoulliTrainTest, trainingData, trainingData[trainingData.size()-1].first+1);
+
+	vector<vector<int>> multinomialTrainSolution = formSolutionMatrix(multinomialTrainTest, trainingData, trainingData[trainingData.size()-1].first+1);
+
+	printToFile("bernoulli.train.out", bernoulliTrainSolution);
+	printToFile("multinomial.train.out", multinomialTrainSolution);
+
 	return 0;
 }
 
